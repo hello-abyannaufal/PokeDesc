@@ -32,7 +32,11 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { gsap } from 'gsap'
 
-const TARGET_SPACING_PX = 110 // desired gap between dots — same on every screen size
+definePageMeta({
+  layout: false,
+})
+
+const TARGET_SPACING_PX = 110 // increased gap between dots to reduce particle count on slow devices
 const particles = ref([])
 let resizeTimer = null
 
@@ -74,6 +78,16 @@ async function refreshGrid() {
   })
 }
 
+function animateTitle() {
+  gsap.to('.hero-title', {
+    y: -12,
+    duration: 1.6,
+    repeat: -1,
+    yoyo: true,
+    ease: 'power1.inOut',
+  })
+}
+
 function handleResize() {
   clearTimeout(resizeTimer)
   resizeTimer = setTimeout(refreshGrid, 250) // debounced — rebuilds after resizing settles
@@ -81,6 +95,7 @@ function handleResize() {
 
 onMounted(() => {
   refreshGrid()
+  animateTitle()
   window.addEventListener('resize', handleResize)
 })
 
