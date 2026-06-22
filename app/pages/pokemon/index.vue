@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="flex justify-center">
     <div class="w-1/2">
       <table class="table">
         <colgroup>
@@ -8,21 +8,31 @@
           <col class="w-5/12" />
           <col class="w-4/12" />
         </colgroup>
-        <!-- head -->
-        <thead class="text-xl text-black font-head">
+        <thead class="text-xl font-head">
           <tr>
             <th v-for="header in headers" :key="header">{{ header }}</th>
           </tr>
         </thead>
-        <!-- body -->
-        <tbody>
-          <tr v-for="row in data.results" :key="row.id">
+        <tbody ref="tbodyRef">
+          <tr v-for="row in pokemonList.results" :key="row.id">
             <th>{{ row.id }}</th>
             <th>
               <img :src="row.sprite" :style="{ imageRendering: 'pixelated' }" width="100" />
             </th>
             <th>{{ row.name }}</th>
-            <th>{{ row.types }}</th>
+            <th>
+              <div class="flex gap-1">
+                <img
+                  v-for="type in row.types"
+                  :key="type"
+                  :src="typeMap[type]"
+                  :alt="type"
+                  :title="type"
+                  :style="{ imageRendering: 'pixelated' }"
+                  width="50"
+                />
+              </div>
+            </th>
           </tr>
         </tbody>
       </table>
@@ -35,21 +45,34 @@
 </template>
 
 <script setup>
-import { ref, capitalize } from 'vue'
+import { ref, computed, capitalize, watch, nextTick } from 'vue'
+import gsap from 'gsap'
 
 const api = usePokeApi()
 const limit = 10
 const offset = ref(0)
 const headers = ['ID', 'Sprite', 'Name', 'Type']
+const tbodyRef = ref(null)
 
-const { data } = await useAsyncData(
+// LOAD TYPE
+const { data: typeList } = await useAsyncData('type-list', async () => {
+  const list = await api('/type')
+  const detailed = await Promise.all(list.results.map((args) => api(`/type/${args.name}`)))
+  return {
+    ...list,
+    results: detailed.map((row) => ({
+      name: row.name,
+      sprite: row.sprites['generation-iii'].emerald.name_icon,
+    })),
+  }
+})
+
+// LOAD POKEMON DATA
+const { data: pokemonList, pending } = await useAsyncData(
   'pokemon-list',
   async () => {
     const list = await api('/pokemon', { params: { limit, offset: offset.value } })
-    console.log(list)
-
     const detailed = await Promise.all(list.results.map((args) => api(`/pokemon/${args.name}`)))
-
     return {
       ...list,
       results: detailed.map((row) => ({
@@ -63,8 +86,33 @@ const { data } = await useAsyncData(
   { watch: [offset] }
 )
 
+function animateRows() {
+  nextTick(() => {
+    if (!tbodyRef.value) return
+    const rows = tbodyRef.value.querySelectorAll('tr')
+    gsap.fromTo(
+      rows,
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.3, stagger: 0.05, ease: 'power2.out' }
+    )
+  })
+}
+
+// animate on first load
+animateRows()
+
+// animate on every pagination
+watch(pending, (isPending) => {
+  if (!isPending) animateRows()
+})
+
+const typeMap = computed(() => {
+  if (!typeList.value) return {}
+  return Object.fromEntries(typeList.value.results.map((t) => [t.name, t.sprite]))
+})
+
 const hasPrev = computed(() => offset.value > 0)
-const hasNext = computed(() => data.value && offset.value + limit < data.value.count)
+const hasNext = computed(() => pokemonList.value && offset.value + limit < pokemonList.value.count)
 
 function prev() {
   if (hasPrev.value) offset.value = Math.max(0, offset.value - limit)
