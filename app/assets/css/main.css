@@ -1,22 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@300..700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&family=VT323&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
 @import 'tailwindcss';
-
 @plugin "daisyui" {
-  /* Only include 'light', making it the forced default */
   themes: light --default;
 }
-
 @theme {
   /* Colors */
-  --color-primary: #e63950; /* Poké red */
-  --color-secondary: #4c7bd9; /* Dex blue */
-  --color-accent: #ffc93c; /* Spark yellow */
-  --color-surface: #15131a; /* Shell */
-  --color-background: #f2efe3; /* Screen */
-  --color-neutral: #8b8678; /* Static gray */
+  --color-poke-red: #e63950;
+  --color-poke-blue: #4c7bd9;
+  --color-poke-yellow: #ffc93c;
+  --color-poke-shell: #15131a;
+  --color-poke-screen: #f2efe3;
+  --color-poke-static: #8b8678;
 
   /* Fonts */
   --font-body: 'Space Grotesk', sans-serif;
@@ -24,15 +20,13 @@
   --font-mono: 'VT323', monospace;
   --font-brand: 'Press Start 2P', system-ui;
 }
-
 :root {
   font-family: var(--font-body), sans-serif;
 }
-
 html,
 body {
   min-height: 100%;
-  background: var(--color-background);
+  background: var(--color-poke-screen);
   color: black;
   font-family: var(--font-body);
 }

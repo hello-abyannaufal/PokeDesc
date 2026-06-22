@@ -1,27 +1,49 @@
 <template>
   <div class="flex justify-center">
-    <div class="w-1/2">
-      <table class="table">
+    <div class="w-full md:w-1/2 mx-auto px-1 md:px-0">
+      <!-- TODO: Create filter type -->
+      <!-- <form class="filter gap-y-1">
+        <input
+          class="btn"
+          v-for="type in typeList.results"
+          type="radio"
+          name="frameworks"
+          :aria-label="capitalize(type.name)"
+        />
+        <input class="btn btn-square" type="reset" value="×" />
+      </form> -->
+
+      <!-- SEARCH FEATURE -->
+      <div class="flex w-full gap-x-1">
+        <input v-model="search" type="text" placeholder="Input name" class="input w-10/12" />
+        <button class="btn w-2/12 bg-poke-yellow border-poke-yellow">
+          <Icon name="mdi:magnify" />
+        </button>
+      </div>
+
+      <!-- TABLE POKEMON DATA -->
+      <table class="table font-mono">
         <colgroup>
           <col class="w-1/12" />
           <col class="w-auto" />
-          <col class="w-5/12" />
-          <col class="w-4/12" />
+          <col class="w-3/12 md:4/12" />
         </colgroup>
-        <thead class="text-xl font-head">
+        <thead class="text-xl font-mono">
           <tr>
             <th v-for="header in headers" :key="header">{{ header }}</th>
           </tr>
         </thead>
-        <tbody ref="tbodyRef">
+        <tbody ref="tbodyRef" class="text-lg">
           <tr v-for="row in pokemonList.results" :key="row.id">
-            <th>{{ row.id }}</th>
+            <th class="text-center">{{ row.id }}</th>
             <th>
-              <img :src="row.sprite" :style="{ imageRendering: 'pixelated' }" width="100" />
+              <div class="flex items-center">
+                <img :src="row.sprite" :style="{ imageRendering: 'pixelated' }" width="100" />
+                {{ row.name }}
+              </div>
             </th>
-            <th>{{ row.name }}</th>
             <th>
-              <div class="flex gap-1">
+              <div class="flex flex-col gap-1">
                 <img
                   v-for="type in row.types"
                   :key="type"
@@ -29,13 +51,14 @@
                   :alt="type"
                   :title="type"
                   :style="{ imageRendering: 'pixelated' }"
-                  width="50"
+                  width="70"
                 />
               </div>
             </th>
           </tr>
         </tbody>
       </table>
+
       <div class="flex flex-row gap-x-2 justify-end">
         <button v-if="hasPrev" class="btn btn-primary" @click="prev()">Previous</button>
         <button v-if="hasNext" class="btn btn-primary" @click="next()">Next</button>
@@ -51,18 +74,20 @@ import gsap from 'gsap'
 const api = usePokeApi()
 const limit = 10
 const offset = ref(0)
-const headers = ['ID', 'Sprite', 'Name', 'Type']
+const headers = ['ID', 'Pokemon Name', 'Type']
+const search = ref('')
 const tbodyRef = ref(null)
 
 // LOAD TYPE
 const { data: typeList } = await useAsyncData('type-list', async () => {
   const list = await api('/type')
   const detailed = await Promise.all(list.results.map((args) => api(`/type/${args.name}`)))
+  console.log('load', detailed)
   return {
     ...list,
     results: detailed.map((row) => ({
       name: row.name,
-      sprite: row.sprites['generation-iii'].emerald.name_icon,
+      sprite: row.sprites['generation-ix']['scarlet-violet'].name_icon,
     })),
   }
 })
@@ -120,6 +145,10 @@ function prev() {
 function next() {
   if (hasNext.value) offset.value += limit
 }
+
+onMounted(() => {
+  console.log(typeList.value)
+})
 </script>
 
 <style scoped></style>

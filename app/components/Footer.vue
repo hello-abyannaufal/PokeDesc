@@ -1,5 +1,5 @@
 <template>
-  <footer class="bg-surface text-static-gray font-pixelify text-sm">
+  <footer class="bg-poke-shell rounded-t-sm text-static-gray font-pixelify text-sm">
     <div
       class="container mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-2 text-center text-white"
     >

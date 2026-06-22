@@ -13,4 +13,5 @@ export default defineNuxtConfig({
       pokeApiBase: 'https://pokeapi.co/api/v2',
     },
   },
+  modules: ['@nuxt/icon'],
 })

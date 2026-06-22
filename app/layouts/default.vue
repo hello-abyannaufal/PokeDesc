@@ -1,4 +1,5 @@
 <template>
+  <AppHeader class="mb-2" />
   <slot />
-  <Footer />
+  <Footer class="mt-7" />
 </template>
