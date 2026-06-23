@@ -43,7 +43,12 @@
             <th>
               <div class="flex items-center">
                 <img :src="row.sprite" :style="{ imageRendering: 'pixelated' }" width="100" />
-                {{ row.name }}
+                <NuxtLink
+                  :to="`/pokemon/${row.name}`"
+                  class="text-poke-blue hover:text-poke-red underline underline-offset-2 transition-colors cursor-pointer"
+                >
+                  {{ row.name }}
+                </NuxtLink>
               </div>
             </th>
             <th>
