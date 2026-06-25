@@ -1,14 +1,9 @@
-<!-- <template>
-  <AppHeader class="mb-2" />
-  <slot />
-  <Footer class="mt-7" />
-</template> -->
 <template>
-  <div class="flex flex-col min-h-screen">
-    <AppHeader class="mb-2" />
-    <main class="flex-1">
+  <div class="flex flex-col h-screen overflow-hidden">
+    <AppHeader />
+    <main class="flex-1 overflow-y-auto py-4"">
       <slot />
     </main>
-    <Footer class="mt-auto" />
+    <Footer />
   </div>
 </template>

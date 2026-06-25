@@ -69,44 +69,52 @@
       </table>
 
       <!-- PAGINATION -->
-      <div class="flex flex-row gap-x-2 justify-end">
-        <button v-if="hasPrev" class="btn btn-primary" @click="prev()">Previous</button>
-        <button v-if="hasNext" class="btn btn-primary" @click="next()">Next</button>
+      <div class="flex justify-center">
+        <div class="join">
+          <button @click="prev()" class="join-item btn" :class="{ 'btn-disabled': !hasPrev }">
+            «
+          </button>
+          <button class="join-item btn">Page {{ currentPage }}</button>
+          <button @click="next()" class="join-item btn" :class="{ 'btn-disabled': !hasNext }">
+            »
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, capitalize, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import gsap from 'gsap'
 
-const api = usePokeApi()
+const { getPokemonList, getFilteredPokemonList, getAllPokemonNames } = usePokeApi()
+const typeStore = useTypeStore()
 const limit = 10
 const offset = ref(0)
 const headers = ['ID', 'Pokemon Name', 'Type']
 const search = ref('')
-const searchTrigger = ref('') // actual trigger for useAsyncData watch
+const searchTrigger = ref('')
 const tbodyRef = ref(null)
 const totalCount = ref(0)
 
 // ─── CACHE ALL 1025 POKEMON NAMES ───────────────────────────────────────────
-// useState persists across navigations within the same session (no localStorage needed)
 const allPokemon = useState('all-pokemon', () => null)
 
 if (!allPokemon.value) {
-  const { data } = await useAsyncData('all-pokemon-names', () =>
-    api('/pokemon', { params: { limit: 1025, offset: 0 } })
-  )
-  allPokemon.value = data.value?.results ?? [] // [{ name, url }, ...]
+  const { data } = await useAsyncData('all-pokemon-names', () => getAllPokemonNames())
+  allPokemon.value = data.value ?? []
 }
 
+// ─── LOAD TYPE SPRITES ───────────────────────────────────────────────────────
+await typeStore.fetch()
+const typeMap = computed(() => typeStore.typeMap)
+
 // ─── SEARCH WATCHER ──────────────────────────────────────────────────────────
-// Fires useAsyncData only when search crosses the 4-char threshold or is cleared
 watch(search, (val) => {
   if (val.length >= 4 || val.length === 0) {
-    offset.value = 0 // reset pagination when switching modes
-    searchTrigger.value = val // triggers useAsyncData re-run
+    offset.value = 0
+    searchTrigger.value = val
   }
 })
 
@@ -117,56 +125,17 @@ const filteredNames = computed(() => {
   return allPokemon.value.filter((p) => p.name.includes(searchTrigger.value.toLowerCase()))
 })
 
-// ─── LOAD TYPE SPRITES ───────────────────────────────────────────────────────
-const { data: typeList } = await useAsyncData('type-list', async () => {
-  const list = await api('/type')
-  const detailed = await Promise.all(list.results.map((t) => api(`/type/${t.name}`)))
-  return {
-    ...list,
-    results: detailed.map((row) => ({
-      name: row.name,
-      sprite: row.sprites['generation-ix']['scarlet-violet'].name_icon,
-    })),
-  }
-})
-
-const typeMap = computed(() => {
-  if (!typeList.value) return {}
-  return Object.fromEntries(typeList.value.results.map((t) => [t.name, t.sprite]))
-})
-
 // ─── LOAD POKEMON DATA ───────────────────────────────────────────────────────
 const { data: pokemonList, pending } = await useAsyncData(
   'pokemon-list',
-  async () => {
-    let targets
-
-    if (isSearchMode.value) {
-      targets = filteredNames.value
-    } else {
-      const list = await api('/pokemon', { params: { limit, offset: offset.value } })
-      totalCount.value = list.count
-      targets = list.results
-    }
-
-    if (targets.length === 0) return { count: 0, results: [] }
-
-    const detailed = await Promise.all(targets.map((p) => api(`/pokemon/${p.name}`)))
-
-    return {
-      count: isSearchMode.value ? filteredNames.value.length : totalCount.value,
-      results: detailed.map((row) => ({
-        id: row.id,
-        name: capitalize(row.name),
-        types: row.types.map((t) => t.type.name),
-        sprite: row.sprites.front_default,
-      })),
-    }
-  },
+  () =>
+    isSearchMode.value
+      ? getFilteredPokemonList(filteredNames.value)
+      : getPokemonList({ limit, offset: offset.value }),
   { watch: [offset, searchTrigger] }
 )
 
-// Set totalCount on first load
+// ─── SET TOTAL COUNT ─────────────────────────────────────────────────────────
 watch(
   pokemonList,
   (val) => {
@@ -195,6 +164,7 @@ watch(pending, (isPending) => {
 })
 
 // ─── PAGINATION ───────────────────────────────────────────────────────────────
+const currentPage = computed(() => Math.floor(offset.value / limit) + 1)
 const hasPrev = computed(() => !isSearchMode.value && offset.value > 0)
 const hasNext = computed(() => !isSearchMode.value && offset.value + limit < totalCount.value)
 
